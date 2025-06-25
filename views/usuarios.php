@@ -1,16 +1,14 @@
 <?php
-// Consulta para el listado
-$sql = "SELECT u.id, u.nombre AS usuario, u.estado, e.nombre AS empleado, r.nombre AS rol
-        FROM usuarios u
-        JOIN empleados e ON u.empleado_id = e.id
-        JOIN roles r ON u.rol_id = r.id";
+
+// Consulta para listado
+$sql = "SELECT u.id, u.nombre_usuario AS usuario, u.estado, p.nombre AS nombre, p.apellidos, u.rol
+        FROM usuarios_hospital u
+        JOIN personal p ON u.id_personal = p.id   ";
 $usuarios = $pdo->query($sql);
 
-// Para selects del modal (guardamos en arrays para reutilizar)
-$empleados = $pdo->query("SELECT id, nombre FROM empleados")->fetchAll(PDO::FETCH_ASSOC);
-$roles = $pdo->query("SELECT id, nombre FROM roles")->fetchAll(PDO::FETCH_ASSOC);
-?>
+$personal = $pdo->query("SELECT id, CONCAT(nombre, ' ', apellidos) AS nombre_completo FROM personal")->fetchAll(PDO::FETCH_ASSOC);
 
+?>
 
 <div id="content" class="container-fluid py-4">
   <div class="thead sticky-top bg-white pb-2" style="top: 60px; z-index: 1040; border-bottom: 1px solid #dee2e6;">
@@ -31,44 +29,36 @@ $roles = $pdo->query("SELECT id, nombre FROM roles")->fetchAll(PDO::FETCH_ASSOC)
     <table class="table table-hover table-bordered align-middle table-sm">
       <thead class="table-light text-nowrap">
         <tr>
-          <th><i class="bi bi-hash me-1 text-muted"></i>ID</th>
-          <th><i class="bi bi-person-badge me-1 text-muted"></i>Empleado</th>
-          <th><i class="bi bi-person me-1 text-muted"></i>Usuario</th>
-          <th><i class="bi bi-shield-lock me-1 text-muted"></i>Rol</th>
-          <th><i class="bi bi-toggle-on me-1 text-muted"></i>Estado</th>
-          <th><i class="bi bi-tools me-1 text-muted"></i>Acciones</th>
+          <th>ID</th>
+          <th>Personal</th>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <?php while ($u = $usuarios->fetch(PDO::FETCH_ASSOC)): ?>
           <tr>
             <td><?= $u['id'] ?></td>
-            <td><?= htmlspecialchars($u['empleado']) ?></td>
+            <td><?= htmlspecialchars($u['nombre'] . ' ' . $u['apellidos']) ?></td>
             <td><?= htmlspecialchars($u['usuario']) ?></td>
             <td><?= htmlspecialchars($u['rol']) ?></td>
-            <td class="text-nowrap text-center">
-  <div class="d-flex align-items-center justify-content-center gap-2">
-    <!-- Botón toggle activar/desactivar -->
-    <button class="btn btn-sm toggle-estado-btn <?= $u['estado'] ? 'btn-success' : 'btn-danger' ?>"
-            data-id="<?= $u['id'] ?>" data-estado="<?= $u['estado'] ?>">
-      <i class="bi <?= $u['estado'] ? 'bi-toggle-on' : 'bi-toggle-off' ?>"></i>
-      <span class="estado-text badge <?= $u['estado'] ? 'bg-success' : 'bg-danger' ?>">
-        <?= $u['estado'] ? 'Activo' : 'Inactivo' ?>
-      </span>
-    </button>
-  </div>
-</td>
-
-            <td class="text-nowrap">
-              <!-- Botón editar -->
-              <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#modalEditar"
+            <td class="text-center">
+              <button class="btn btn-sm toggle-estado-btn <?= $u['estado'] ? 'btn-success' : 'btn-danger' ?>"
+                data-id="<?= $u['id'] ?>" data-estado="<?= $u['estado'] ?>">
+                <i class="bi <?= $u['estado'] ? 'bi-toggle-on' : 'bi-toggle-off' ?>"></i>
+                <span class="estado-text badge <?= $u['estado'] ? 'bg-success' : 'bg-danger' ?>">
+                  <?= $u['estado'] ? 'Activo' : 'Inactivo' ?>
+                </span>
+              </button>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditar"
                 data-id="<?= $u['id'] ?>" data-usuario="<?= $u['usuario'] ?>" data-estado="<?= $u['estado'] ?>">
                 <i class="bi bi-pencil-square"></i>
               </button>
-
-
             </td>
-
           </tr>
         <?php endwhile; ?>
       </tbody>
@@ -76,95 +66,109 @@ $roles = $pdo->query("SELECT id, nombre FROM roles")->fetchAll(PDO::FETCH_ASSOC)
   </div>
 </div>
 
-
 <!-- Modal Registro -->
-<div class="modal fade" id="modalRegistro" tabindex="-1">
-  <div class="modal-dialog">
-    <form class="modal-content needs-validation" novalidate action="api/guardar_usuario.php" method="POST">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-person-add"></i> Registrar Usuario</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+ <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form class="modal-content shadow-lg rounded-4 border-0 needs-validation" novalidate action="api/guardar_usuario.php" method="POST">
+      <div class="modal-header bg-success text-white rounded-top-4">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-person-add me-2"></i> Registrar Nuevo Usuario
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label"><i class="bi bi-person-vcard"></i> Empleado</label>
-          <select class="form-select" name="empleado_id" required>
-            <option value="">Seleccione...</option>
-            <?php foreach ($empleados as $e): ?>
-              <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['nombre']) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label"><i class="bi bi-person"></i> Nombre de usuario</label>
-          <input type="text" name="nombre" class="form-control" required maxlength="25">
-        </div>
-        <div class="mb-3">
-          <label class="form-label"><i class="bi bi-lock"></i> Contraseña</label>
-          <input type="password" name="contrasena" class="form-control" required minlength="6">
-        </div>
-        <div class="mb-3">
-          <label class="form-label"><i class="bi bi-shield-lock"></i> Rol</label>
-          <select name="rol_id" class="form-select" required>
-            <option value="">Seleccione...</option>
-            <?php foreach ($roles as $r): ?>
-              <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
-            <?php endforeach; ?>
-          </select>
+      <div class="modal-body p-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-person-vcard me-1"></i> Personal</label>
+            <select class="form-select" name="id_personal" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($personal as $p): ?>
+                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nombre_completo']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-person-badge-fill me-1"></i> Nombre de usuario</label>
+            <input type="text" name="nombre_usuario" class="form-control" required maxlength="25">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-shield-lock-fill me-1"></i> Contraseña</label>
+            <input type="password" name="password" class="form-control" required minlength="6">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-person-gear me-1"></i> Rol</label>
+            <select name="rol" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <option value="administrador">Administrador</option>
+              <option value="urgencia">Urgencia</option>
+              <option value="enfermeria">Enfermería</option>
+              <option value="doctor">Doctor</option>
+              <option value="laboratorio">Laboratorio</option>
+              <option value="medicina_interna">Medicina Interna</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-success">
-          <i class="bi bi-save"></i> Guardar
+      <div class="modal-footer bg-light rounded-bottom-4 px-4 py-3">
+        <button type="submit" class="btn btn-success px-4">
+          <i class="bi bi-save me-1"></i> Guardar
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Modal Editar -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
-  <div class="modal-dialog">
-    <form class="modal-content" action="api/editar_usuario.php" method="POST">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Usuario</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form class="modal-content shadow-lg rounded-4 border-0 needs-validation" novalidate action="api/editar_usuario.php" method="POST">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-pencil-square me-2"></i> Editar Usuario
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body p-4">
         <input type="hidden" name="id" id="edit-id">
-        <div class="mb-3">
-          <label class="form-label">Nombre de usuario</label>
-          <input type="text" name="nombre" id="edit-nombre" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Estado</label>
-          <select name="estado" id="edit-estado" class="form-select" required>
-            <option value="1">Activo</option>
-            <option value="0">Inactivo</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Rol</label>
-          <select name="rol_id" class="form-select" required>
-            <?php foreach ($roles as $r): ?>
-              <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
-            <?php endforeach; ?>
-          </select>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-person-badge-fill me-1"></i> Nombre de usuario</label>
+            <input type="text" name="nombre_usuario" id="edit-nombre" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-toggle-on me-1"></i> Estado</label>
+            <select name="estado" id="edit-estado" class="form-select" required>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><i class="bi bi-person-gear me-1"></i> Rol</label>
+            <select name="rol" id="edit-rol" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <option value="administrador">Administrador</option>
+              <option value="urgencia">Urgencia</option>
+              <option value="enfermeria">Enfermería</option>
+              <option value="doctor">Doctor</option>
+              <option value="laboratorio">Laboratorio</option>
+              <option value="medicina_interna">Medicina Interna</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-arrow-repeat"></i> Actualizar
+      <div class="modal-footer bg-light rounded-bottom-4 px-4 py-3">
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-arrow-repeat me-1"></i> Actualizar
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-  // Validación de formularios
+  // Validación
   (() => {
     'use strict';
     const forms = document.querySelectorAll('.needs-validation');
@@ -179,7 +183,7 @@ $roles = $pdo->query("SELECT id, nombre FROM roles")->fetchAll(PDO::FETCH_ASSOC)
     });
   })();
 
-  // Rellenar modal editar
+  // Modal editar
   const modalEditar = document.getElementById('modalEditar');
   modalEditar.addEventListener('show.bs.modal', e => {
     const btn = e.relatedTarget;
@@ -188,58 +192,30 @@ $roles = $pdo->query("SELECT id, nombre FROM roles")->fetchAll(PDO::FETCH_ASSOC)
     document.getElementById('edit-estado').value = btn.getAttribute('data-estado');
   });
 
+  // Toggle estado usuario
+  function activarEventosUsuarios() {
+    document.querySelectorAll('.toggle-estado-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const estado = parseInt(btn.dataset.estado);
+        const nuevo = estado === 1 ? 0 : 1;
+        if (!confirm(`¿Estás seguro de ${nuevo ? 'activar' : 'desactivar'} este usuario?`)) return;
+        const datos = new FormData();
+        datos.append('id', id);
+        datos.append('estado', estado);
 
-  function activeUser() {
-  document.querySelectorAll('.toggle-estado-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-id');
-      const estadoActual = parseInt(btn.getAttribute('data-estado'), 10);
-      const nuevoEstado = estadoActual === 1 ? 0 : 1;
-
-      const confirmMsg = nuevoEstado === 1
-        ? '¿Estás seguro de que deseas ACTIVAR este usuario?'
-        : '¿Estás seguro de que deseas DESACTIVAR este usuario?';
-
-      if (!confirm(confirmMsg)) return;
-
-      const formData = new FormData();
-      formData.append('id', id);
-      formData.append('estado', estadoActual);
-
-      try {
-        const response = await fetch('api/toggle_usuario.php', {
-          method: 'POST',
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          const nuevoEstado = data.nuevo_estado;
-
-          // Actualiza atributos y clases
-          btn.setAttribute('data-estado', nuevoEstado);
-          btn.classList.toggle('btn-success', nuevoEstado === 1);
-          btn.classList.toggle('btn-danger', nuevoEstado === 0);
-          btn.querySelector('i').className = `bi ${nuevoEstado === 1 ? 'bi-toggle-on' : 'bi-toggle-off'}`;
-
-          // Actualiza el texto visual al lado del botón
-          const spanEstado = btn.closest('td').querySelector('.estado-text');
-          spanEstado.className = `estado-text badge ${nuevoEstado === 1 ? 'bg-success' : 'bg-danger'}`;
-          spanEstado.textContent = nuevoEstado === 1 ? 'Activo' : 'Inactivo';
-        } else {
-          alert('Error: ' + (data.message || 'No se pudo cambiar el estado.'));
+        try {
+          const res = await fetch('api/toggle_usuario.php', { method: 'POST', body: datos });
+          const data = await res.json();
+          if (data.success) location.reload();
+          else alert('Error al cambiar estado.');
+        } catch (err) {
+          console.error(err);
+          alert('Error de conexión.');
         }
-      } catch (err) {
-        console.error(err);
-        alert('Error de red o del servidor.');
-      }
+      });
     });
-  });
-}
-  document.addEventListener('DOMContentLoaded', () => {
+  }
 
-    activeUser()
-  });
-
+  document.addEventListener('DOMContentLoaded', activarEventosUsuarios);
 </script>

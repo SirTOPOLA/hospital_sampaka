@@ -4,8 +4,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 
-function verificarAcceso($vista)
-{
+function verificarAcceso($vista){
     // Si no hay sesión → redirige a login
     if (!isset($_SESSION['usuario'])) {
         header("Location: index.php?vista=login");
@@ -26,6 +25,10 @@ function verificarAcceso($vista)
             'dashboard' ,  
             'usuarios' ,  
             'empleados' ,  
+            'pacientes' ,  
+            'consultas' ,  
+            'analiticas' ,  
+            'pruebas' ,  
         ],
         'secretaria' => [
             'dashboard' 

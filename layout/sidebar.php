@@ -1,5 +1,5 @@
 <?php
-$rol = strtolower(trim($_SESSION['usuario']['rol'] ?? 'sin_permiso'));
+$rol = strtolower(trim($_SESSION['usuario']['rol'] ?? 'administrador'));
 $current = $_GET['vista'] ?? 'dashboard';
  
 // Clase CSS adicional según el rol del usuario
@@ -18,6 +18,7 @@ $iconos_por_rol = [
     'dashboard' => 'bi-speedometer2',
     'usuarios' => 'bi-person-gear',
     'empleados' => 'bi-person-gear',
+    'pacientes' => 'bi-person-gear',
     'configuracion' => 'bi-gear-wide-connected',
   ],
   'secretaria' => [
@@ -43,6 +44,10 @@ $menu = [
     'Dashboard' => 'dashboard', 
     'Usuarios' => 'usuarios',
     'Empleados' => 'empleados',
+    'pacientes' => 'pacientes',
+    'consultas' => 'consultas',
+    'analiticas' => 'analiticas',
+    'pruebas' => 'pruebas',
     'Configuración' => 'configuracion',
   ],
   'laboratorio' => [
