@@ -16,9 +16,9 @@ $vista = $_GET['vista'] ?? 'dashboard';
 
 if (in_array($vista, $publicas)) {
     // --- PÚBLICO ---
-    include 'layout/headerLogin.php';
+   // include 'layout/headerLogin.php';
     include "{$vista}.php";
-    include 'layout/footerLogin.php';
+   // include 'layout/footerLogin.php';
 } else {
     // --- PRIVADO ---
     verificarAcceso($vista);
